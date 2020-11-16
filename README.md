@@ -1,1 +1,1 @@
-# ProyectoOrganizacion
+# Proyecto de Organizacion de Computadores
