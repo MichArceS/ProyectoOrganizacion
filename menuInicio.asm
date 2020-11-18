@@ -8,8 +8,13 @@ text4:      .asciiz "2) Ingresar partido\n"
 text5:      .asciiz "3) Mostrar Top 3\n"
 text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
-file:       .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
+file:       .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
+file2:       .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
 buffer:     .space 1024
+
+salto:      .byte '\n'
+coma:	    .byte ','
+teams:	    .space 1024
 
 .text
 main:
@@ -73,6 +78,7 @@ main:
 		la $a0, text6
 		syscall
 		j Exit
+		
 	fileReading:
 		#Opening a file
 		li $v0, 13
@@ -87,18 +93,112 @@ main:
 		la $a1, buffer
 		li $a2, 1024
 		syscall
-
-		#Printing content
-		li $v0, 4
-		la $a0, buffer
+		
+		#Closing the file
+		li $v0, 16
+		move $a0, $s0
 		syscall
 
+		#Printing content
+		jal readFile
+		
+		
+		#Opening a file
+	Save:	li $v0, 13
+		la $a0, file2
+		li $a1, 1
+		syscall
+		move $s0, $v0
+		
+		
+		li $v0, 15
+		move $a0, $s0
+		la $a1, teams
+		li $a2, 60
+		syscall
+		
 		#Closing the file
 		li $v0, 16
 		move $a0, $s0
 		syscall
 		j main
+		
+		
+		
+		
+
+		
 	
 Exit:
 	li $v0, 10
 	syscall
+	
+	
+	
+
+readFile:
+		#Reservar
+		addi $sp,$sp, -40
+		sw $t0, 0($sp)
+		sw $t1, 4($sp)
+		sw $t2, 8($sp)
+		sw $t3, 12($sp)
+		sw $t4, 16($sp)
+		sw $s1, 20($sp)
+		sw $s2, 24($sp)
+		sw $s3, 28($sp)
+		sw $s4, 32($sp)
+		sw $s5, 36($sp)
+		
+		li $t0, 0 			#Index of Buffer
+		la $t1, buffer			#File Buffer
+		la $t2, teams			#Teams Array
+		li $t3, 0 			#Index of Teams
+		li $t4, 0 			# Linea Flag 
+		lb $s3, coma
+		lb $s5, salto
+		
+		
+	 	
+	Loop:	add $s1, $t1, $t0
+		lb $s2, 0($s1)			#carga el caracter
+
+		beq $s2, $zero, rfend 		#Se verifica que se acabo el string
+		beq $s2, $s5, lin 		#Se verifica un salto de linea
+		beq $t4, 1, continue 		#Si ya hubo una coma, continua
+		beq $s2, $s3, com		#Se verifica si es una coma
+		
+		add $s4, $t2, $t3 
+		sb $s2, 0($s4)			#Guarda el caracter
+		addi $t3,$t3, 1			#Se aumenta el indice del array de equipos
+		j continue
+		
+		
+	com:	li $t4, 1			#Cuando encuentra la primera coma
+		add $s4, $t2, $t3		#Guarda la coma y cambia el flag para no guardar
+		sb $s2, 0($s4)			#los otros elementos.
+		addi $t3,$t3, 1			#Aqui se puede identificar por caso para guardar 
+		j continue			#El elemento de la columna
+		
+	lin:	li $t4, 0 			#Cuando hay un salto de linea, el flag pasa a 0
+	
+     continue:  addi $t0,$t0,1			#Se aumenta el indice del buffer	
+		j Loop
+		
+		
+		
+	rfend:	
+		lw $t0, 0($sp)
+		lw $t1, 4($sp)
+		lw $t2, 8($sp)
+		lw $t3, 12($sp)
+		lw $t4, 16($sp)
+		lw $s1, 20($sp)
+		lw $s2, 24($sp)
+		lw $s3, 28($sp)
+		lw $s4, 32($sp)
+		lw $s4, 36($sp)
+		addi $sp,$sp, 40
+		
+		jr $ra
+	
