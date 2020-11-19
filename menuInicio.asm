@@ -1,6 +1,12 @@
 
 .data 
 
+buffer:     .space 1024
+matrix:	    .space 512
+teams:	    .space 1024
+team:       .space 40
+numChars:   .word 6
+
 text1:      .asciiz "Bienvenido!\n"
 text2:      .asciiz "Selecciona una opcion: \n"
 text3:	    .asciiz "1) Tabla de posiciones\n"
@@ -10,9 +16,9 @@ text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
 file:       .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
 file2:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
-buffer:     .space 1024
 
-matrix:	    .space 256
+
+
 textLocal:	.asciiz "Ingrese equipo local: \n"
 textVisitante:	.asciiz "Ingrese equipo visitante: \n"
 textMarcadorL:	.asciiz "Ingrese el marcador del equipo local: \n"
@@ -21,10 +27,9 @@ textMarcadorV:	.asciiz "Ingrese el marcador del equipo visitante: \n"
 salto:      .byte '\n'
 coma:	    .byte ','
 menos:      .byte '-'
-teams:	    .space 1024
 
-team:    .space 40
-numChars: .word 6
+
+
 #input:	  .space 6
 
 .text
@@ -145,11 +150,12 @@ Exit:
 
 readFile:
 		#Reservar
+		addi $sp, $sp, -4
+		sw $ra, ($sp)
 		
 		la $s1, buffer			#File Buffer
 		la $s2, teams			#Teams Array
 		la $s6, matrix			#Matrix
-		addi $s6, $s6, 1
 		li $t1, 0 			# Linea Flag - Indica si ya se encontro la primera coma.
 		lb $s3, coma			
 		lb $s5, salto		
@@ -180,20 +186,26 @@ readFile:
 	points: li $t2, 0			#caracteres	
 		li $t3, 0			#Numero 1
 		li $t4, 0 			#Numero 2
-		la $a0, ($s1)
+		la $a0, ($s1)			#Guarda en el argumento, la referencia a los caracteres
 	
 	contarCaracteres:
-		beq $t0, $s3, guardar
-		beq $t0, $zero, guardar
-		addi $t2, $t2, 1
-		addi $s1, $s1, 1
+		beq $t0, $s3, guardar		#preguntar si es una coma
+		beq $t0, $s5, guardarLin	#preguntar si es un salto de linea
+		beq $t0, $zero, guardar		#pretuntar si ya acabo el buffer
+		addi $t2, $t2, 1		#Cuento un caracter mas
+		addi $s1, $s1, 1		#Muevo el buffer
 		lb $t0, ($s1)
 		j contarCaracteres
-		
+	
+	guardarLin:
+		li $t1, 0			#Si encontro una linea, hace el flag 0 
+		addi $t2, $t2, -1		#Se quita un caracter, porque por algun motivo el salto de linea tiene 2 caracteres,
+						#pero el codigo ascii solo reconoce uno jeje
 	guardar:
-		jal stringToInt
+		add $a2, $t2, $zero		#ingresa el argumento
+		jal stringToInt			#llama a la funcion
 		
-		sll $t9, $s7, 2
+		sll $t9, $s7, 2			#Alinea los elementos
 		add $t9, $t9, $s6
 		sw $v0, 0($t9)			#Guarda los puntos
 		addi $s7, $s7, 1
@@ -201,17 +213,28 @@ readFile:
 		
 	lin:	li $t1, 0 			#Cuando hay un salto de linea, el flag pasa a 0
 	
-     continue:  			
+     continue:  
+     		beq $t0, $zero, rfend			
 		addi $s1,$s1,1			#Se aumenta el indice del buffer
 		j Loop
 		
 		
 		
 	rfend:					#Guarda la coma y cambia el flag para no guardar
+		lw $ra, ($sp)
+		addi $sp, $sp, 4
 		jr $ra
 		
 		
 serch:		#Retorna el indicice del equipo - a0 equipo - v0 indice
+		addi $sp, $sp, -24
+		sw $t0, 0($sp)
+		sw $t1, 4($sp)
+		sw $t2, 8($sp)
+		sw $t3, 12($sp)
+		sw $t4, 16($sp)
+		sw $t5, 20($sp)
+		
 		li $t0, 0
 		la $t1, teams
 		lb $t3, coma
@@ -247,27 +270,47 @@ serch:		#Retorna el indicice del equipo - a0 equipo - v0 indice
 	sReturnN:
 		li $v0, -1			#retorna -1		
 	sReturn: 	
+		
+		lw $t0, 0($sp)
+		lw $t1, 4($sp)
+		lw $t2, 8($sp)
+		lw $t3, 12($sp)
+		lw $t4, 16($sp)
+		lw $t5, 20($sp)
+		addi $sp, $sp, -24
 		jr $ra				#Salida de la funcion
 		
-stringToInt:
+stringToInt:	#Recibe en a0 el puntero al buffer y $a2 la cantidad de caracteres 
+		#Retorna en v0 el int.
+
 		#la $a1, input
 		#la $a1, $a0
 		#lw $a1, 0($a1)
 		
 		#add $t0, $zero, $a0
 		#lb $a0, 0($t0)
+		
+		#Reserva
+		addi $sp, $sp, -16
+		sw $t6, 0($sp)
+		sw $t7, 4($sp)
+		sw $t8, 8($sp)
+		sw $t9, 12($sp)
+		
 		lb $t9, menos				#cargo el menos
-		lb $t8, 0($a0)			#cargo la direccion del buffer
+		lb $t8, 0($a0)				#cargo la direccion del buffer
 		li $t7, 0
+		li $t6, 0				#flag si el numero es negativo
 		
 		bne $t8, $t9, positive			#veo si es positivo o negativo
 		li $t6, 1				#flag si es negativo
 		addi $a0, $a0, 1			#aumento el buffer
+		addi $a2, $a2, -1
 		lb $t8, 0($a0)				#cargo el siguiente byte
 		
 	positive:
-		beq $t2, 2, int2			#veo si tiene dos caracteros
-		beq $t2, 1, int1			#si tiene un caracter
+		beq $a2, 2, int2			#veo si tiene dos caracteros
+		beq $a2, 1, int1			#si tiene un caracter
 		
 	int2:	addi $t7, $t8, -48			#resto -48 para sacar el numero
 		mul $t7, $t7, 10 			#multiplico por 10 (base decimal)
@@ -279,9 +322,22 @@ stringToInt:
 		#move $a0, $s0			
 	
 		bne $t6, 1, ret				#aqui debe de convertirse el numero a negativo.
+		not $t7, $t7
+		addi $t7, $t7, 1
 		
 	ret:	move $v0, $t7				#retorno
+		
+		lw $t6, 0($sp)
+		lw $t7, 4($sp)
+		lw $t8, 8($sp)
+		lw $t9, 12($sp)
+		addi $sp, $sp, 16
+		
 		jr $ra
+		
+		
+		
+		
 enterMatch:
 		li $v0, 4
 		la $a0, textLocal
