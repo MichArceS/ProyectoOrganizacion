@@ -12,9 +12,17 @@ file:       .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\
 file2:       .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
 buffer:     .space 1024
 
+textLocal:	.asciiz "Ingrese equipo local: \n"
+textVisitante:	.asciiz "Ingrese equipo visitante: \n"
+textMarcadorL:	.asciiz "Ingrese el marcador del equipo local: \n"
+textMarcadorV:	.asciiz "Ingrese el marcador del equipo visitante: \n"
+
 salto:      .byte '\n'
 coma:	    .byte ','
 teams:	    .space 1024
+
+numChars: .word 6
+input:	  .space 6
 
 .text
 main:
@@ -67,7 +75,7 @@ main:
 		li $v0, 4
 		la $a0, text4
 		syscall
-		j main
+		jal enterMatch
 	case3:
 		li $v0, 4
 		la $a0, text5
@@ -108,8 +116,7 @@ main:
 		la $a0, file2
 		li $a1, 1
 		syscall
-		move $s0, $v0
-		
+		move $s0, $v0	
 		
 		li $v0, 15
 		move $a0, $s0
@@ -122,13 +129,7 @@ main:
 		move $a0, $s0
 		syscall
 		j main
-		
-		
-		
-		
-
-		
-	
+			
 Exit:
 	li $v0, 10
 	syscall
@@ -201,4 +202,47 @@ readFile:
 		addi $sp,$sp, 40
 		
 		jr $ra
+stringToInt:
+		la $a1, input
+		lw $a1, 0($a1)
+		
+		add $t0, $zero, $a0
+		lb $a0, 0($t0)
+		addi $a0, $a0, -48
+		move $a0, $s0
+		
+		jr $ra
+enterMatch:
+		li $v0, 4
+		la $a0, textLocal
+		syscall
 	
+		li $v0, 8
+        	syscall
+        	move $a0, $s0
+        	
+		li $v0, 4
+		la $a0, textVisitante
+		syscall
+	
+		li $v0, 8
+	        syscall
+		move $a0, $s1
+		
+		li $v0, 4
+		la $a0, textMarcadorL
+		syscall
+	
+		li $v0, 5
+        	syscall
+        	move $a0, $s2
+        	
+		li $v0, 4
+		la $a0, textMarcadorV
+		syscall
+		
+		li $v0, 5
+        	syscall
+        	move $a0, $s3
+        	
+        	jr $ra
