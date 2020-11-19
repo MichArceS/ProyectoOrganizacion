@@ -20,11 +20,12 @@ textMarcadorV:	.asciiz "Ingrese el marcador del equipo visitante: \n"
 
 salto:      .byte '\n'
 coma:	    .byte ','
+menos:      .byte '-'
 teams:	    .space 1024
 
 team:    .space 40
 numChars: .word 6
-input:	  .space 6
+#input:	  .space 6
 
 .text
 main:
@@ -112,15 +113,7 @@ main:
 		#Printing content
 		jal readFile
 		
-		la $a0, team
-		li $a1, 40
-		li $v0, 8
-		syscall
-		
-		la $a0, team
-		j serch
-		
-		la $a0, ($v0)
+		move  $a0, $v0 
 		li $v0, 1
 		syscall
 		
@@ -152,73 +145,69 @@ Exit:
 
 readFile:
 		#Reservar
-		addi $sp,$sp, -40
-		sw $t0, 0($sp)
-		sw $t1, 4($sp)
-		sw $t2, 8($sp)
-		sw $t3, 12($sp)
-		sw $t4, 16($sp)
-		sw $s1, 20($sp)
-		sw $s2, 24($sp)
-		sw $s3, 28($sp)
-		sw $s4, 32($sp)
-		sw $s5, 36($sp)
 		
-		la $t1, buffer			#File Buffer
-		la $t2, teams			#Teams Array
+		la $s1, buffer			#File Buffer
+		la $s2, teams			#Teams Array
 		la $s6, matrix			#Matrix
-		li $t4, 0 			# Linea Flag
-		lb $s3, coma
-		lb $s5, salto
+		addi $s6, $s6, 1
+		li $t1, 0 			# Linea Flag - Indica si ya se encontro la primera coma.
+		lb $s3, coma			
+		lb $s5, salto		
+		li $s7, 0
 		
 		
 	 	
-	Loop:	lb $s2, 0($t1)			#carga el caracter
+	Loop:	lb $t0, 0($s1)			#carga el caracter
 
-		beq $s2, $zero, rfend 		#Se verifica que se acabo el string
-		beq $s2, $s5, lin 		#Se verifica un salto de linea
-		beq $t4, 1, points 		#Si ya hubo una coma, guarda los puntos
-		beq $s2, $s3, com		#Se verifica si es una coma
+		beq $t0, $zero, rfend 		#Se verifica que se acabo el string
+		beq $t0, $s5, lin 		#Se verifica un salto de linea
+		beq $t1, 1, points 		#Si ya hubo una coma, pasa a guardar los puntos
+		beq $t0, $s3, com		#Se verifica si es una coma
 		
-		sb $s2, 0($t2)			#Guarda el caracter
-		addi $t2,$t2, 1			#Se aumenta el indice del array de equipos
+		sb $t0, 0($s2)			#Guarda el caracter
+		addi $s2,$s2, 1			#Se aumenta el indice del array de equipos
 		j continue
 		
 		
-	com:	li $t4, 1		#Cuando encuentra la primera coma
+	com:	li $t1, 1			#Cuando encuentra la primera coma e flag pasa a 1.
 		
-	team:					#Guarda la coma y cambia el flag para no guardar
-		sb $s2, 0($t2)			#los otros elementos.
-		addi $t2,$t2, 1			#Aqui se puede identificar por caso para guardar 
-		j continue			#El elemento de la columna
+		
+		sb $t0, 0($s2)			#se agrega una coma al array de equipos
+		#hay que ver si se agrega como byte o como word pero hay que alinearlo.
+		addi $s2,$s2, 1			#se aumenta el indice
+		j continue			
 	
-	points: beq $s2, $s3, continue
-		sb $s2, 0($s6)			#Guarda los puntos
-		addi $s6,$s6, 1
+	points: li $t2, 0			#caracteres	
+		li $t3, 0			#Numero 1
+		li $t4, 0 			#Numero 2
+		la $a0, ($s1)
+	
+	contarCaracteres:
+		beq $t0, $s3, guardar
+		beq $t0, $zero, guardar
+		addi $t2, $t2, 1
+		addi $s1, $s1, 1
+		lb $t0, ($s1)
+		j contarCaracteres
+		
+	guardar:
+		jal stringToInt
+		
+		sll $t9, $s7, 2
+		add $t9, $t9, $s6
+		sw $v0, 0($t9)			#Guarda los puntos
+		addi $s7, $s7, 1
 		j continue
 		
-	lin:	li $t4, 0 			#Cuando hay un salto de linea, el flag pasa a 0
+	lin:	li $t1, 0 			#Cuando hay un salto de linea, el flag pasa a 0
 	
-     continue:  #addi $t0,$t0,1			#Se aumenta el indice del buffer	
-		addi $t1,$t1,1	
+     continue:  			
+		addi $s1,$s1,1			#Se aumenta el indice del buffer
 		j Loop
 		
 		
 		
-	rfend:	add $s1, $t2, $t3		#Guarda la coma y cambia el flag para no guardar
-		sb $s2, 0($s1)
-		lw $t0, 0($sp)
-		lw $t1, 4($sp)
-		lw $t2, 8($sp)
-		lw $t3, 12($sp)
-		lw $t4, 16($sp)
-		lw $s1, 20($sp)
-		lw $s2, 24($sp)
-		lw $s3, 28($sp)
-		lw $s4, 32($sp)
-		lw $s4, 36($sp)
-		addi $sp,$sp, 40
-		
+	rfend:					#Guarda la coma y cambia el flag para no guardar
 		jr $ra
 		
 		
@@ -229,43 +218,69 @@ serch:		#Retorna el indicice del equipo - a0 equipo - v0 indice
 		
 		
 	ingreso:	
-		la $t2, ($a0) 
+		la $t2, ($a0)			#Carga la direccion del  ingreso
 	
-	stringCmp:
-		lb $t4, ($t1)   #team
-		lb $t5, ($t2)	#input
-		bne $t4, $t5, out
+	stringCmp:				#Compara byte por byte el nombre
+		lb $t4, ($t1)   		#Carga byte de equipo
+		lb $t5, ($t2)			#Carga byte de ingreso
+		bne $t4, $t5, out		#Si no son iguales sale
 		addi $t1, $t1, 1
 		addi $t2, $t2, 1
-		j stringCmp	
+		j stringCmp			
 	out:
-		bne $t4, $t3, next
-		bne $t5, $zero, next
-		sw $t0, ($v0) 
-		j sReturn
+		bne $t4, $t3, next		#Primero valida si la salida fue por por la compa, si no continua.
+		move $v0, $t0 			#Si la salida fue por la coma, quiere decir que todo el nombre es igual. Retorna el indice
+		j sReturn			#Sale de la funcion 
 		
 	next:	
-		beq $t4, $zero, sReturn
-		beq $t4, $t3, saltar
+		lb $t4, ($t1)			#En el caso de que no haya sigo por una coma. continua recorriendo los equipos
+		beq $t4, $zero, sReturnN	#Si el buffer ya llego al final, sale de la funcion retornando -1.
+		beq $t4, $t3, saltar		#Si llega a una coma, vuelve a comparar.
 		addi $t1, $t1, 1
 		j next
 
 	saltar:
-		addi $t1, $t1, 1
-		addi $t0, $t0, 1
-		j ingreso
+		addi $t1, $t1, 1		#Avanza uno para omitir la coma
+		addi $t0, $t0, 1		#Como avanza a un nuevo equipo, el indice aumenta 1.
+		j ingreso			#Vuelve a comparar
 		
-	sReturn: 
-		jr $ra
+	sReturnN:
+		li $v0, -1			#retorna -1		
+	sReturn: 	
+		jr $ra				#Salida de la funcion
+		
 stringToInt:
-		la $a1, input
-		lw $a1, 0($a1)
+		#la $a1, input
+		#la $a1, $a0
+		#lw $a1, 0($a1)
 		
-		add $t0, $zero, $a0
-		lb $a0, 0($t0)
-		addi $a0, $a0, -48
-		move $a0, $s0
+		#add $t0, $zero, $a0
+		#lb $a0, 0($t0)
+		lb $t9, menos				#cargo el menos
+		lb $t8, 0($a0)			#cargo la direccion del buffer
+		li $t7, 0
 		
+		bne $t8, $t9, positive			#veo si es positivo o negativo
+		li $t6, 1				#flag si es negativo
+		addi $a0, $a0, 1			#aumento el buffer
+		lb $t8, 0($a0)				#cargo el siguiente byte
+		
+	positive:
+		beq $t2, 2, int2			#veo si tiene dos caracteros
+		beq $t2, 1, int1			#si tiene un caracter
+		
+	int2:	addi $t7, $t8, -48			#resto -48 para sacar el numero
+		mul $t7, $t7, 10 			#multiplico por 10 (base decimal)
+		addi $a0, $a0, 1			#aumento el buffer
+		lb $t8, 0($a0)				#cargo el siguiente byte
+	int1:	
+		addi $t8, $t8, -48			#resto 48 para sacar el numero
+		add $t7, $t7, $t8			#sumo al numero anterior. si no habia, es 0
+		#move $a0, $s0			
+	
+		bne $t6, 1, ret				#aqui debe de convertirse el numero a negativo.
+		
+	ret:	move $v0, $t7				#retorno
 		jr $ra
 enterMatch:
 		li $v0, 4
