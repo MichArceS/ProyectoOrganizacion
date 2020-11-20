@@ -5,6 +5,7 @@ buffer:     .space 1024
 matrix:	    .space 512
 teams:	    .space 1024
 team:       .space 40
+string:     .space 8
 numChars:   .word 6
 
 text1:      .asciiz "Bienvenido!\n"
@@ -115,12 +116,11 @@ main:
 		move $a0, $s0
 		syscall
 
-		#Printing content
+		#Processing File
 		jal readFile
 		
-		move  $a0, $v0 
-		li $v0, 1
-		syscall
+		#Make Buffer File
+		jal saveFile
 		
 		#Opening a file
 	Save:	li $v0, 13
@@ -131,8 +131,8 @@ main:
 		
 		li $v0, 15
 		move $a0, $s0
-		la $a1, matrix
-		li $a2, 256
+		la $a1, buffer
+		li $a2, 512
 		syscall
 		
 		#Closing the file
@@ -223,6 +223,34 @@ readFile:
 	rfend:					#Guarda la coma y cambia el flag para no guardar
 		lw $ra, ($sp)
 		addi $sp, $sp, 4
+		jr $ra
+
+	
+saveFile:
+		addi $sp, $sp, -4
+		sw $ra, ($sp)
+		
+		la $s1, matrix
+		la $t0, ($s1)
+		la $t1, buffer
+		
+	byte:
+		lw $a0, ($t0)
+		jal IntToString
+		
+	guardarAscii:
+		addi $t3, $t0, -512
+		beq $t3, $s1, readReturn
+		beq $v1, 0, readReturn
+		sb  $v0, ($t1)
+		addi $t1, $t1, 1
+		addi $v1, $v1, -1
+		j guardarAscii
+		
+	readReturn:
+		lw $ra, ($sp)
+		addi $sp, $sp, 4
+		
 		jr $ra
 		
 		
@@ -335,6 +363,41 @@ stringToInt:	#Recibe en a0 el puntero al buffer y $a2 la cantidad de caracteres
 		
 		jr $ra
 		
+IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en ascii y v1 la cantidad de caracteres.
+		la $v0, string
+		li $v1, 0
+		li $t1, 10
+		la $t2, menos
+		bge $a0, 0, positivo
+		
+		sb $t2, ($v0)			#Si es negativo, guardo el caracter menos al principio
+		addi $v0, $v0, 1
+		addi $v1, $v1, 1
+		
+		addi $a0, $a0, -1		#Convieto el numero a positivo y lo trabajo como positivo
+		not $a0, $a0
+		
+		
+	positivo:
+		blt $a0, 10, caract1		#si es menor a 10 solo tiene un caracter
+		div $a0, $t6			#si es mayor se divide para 10
+		mfhi $t2			#sacamos el modulo
+		mflo $a0			#sacamos el residuo y lo guardamos para ser procesado por caract1
+		
+		addi $t2, $t2, 48		#al modulo le sumamos 48 para sacar el ascii
+		sb $t2, ($v0)			#guardamos el primer caracter
+		addi $v0, $v0, 1		#aumento el buffer
+		addi $v1, $v1, 1		#aumento los caracteres
+		
+	caract1:
+		addi $t0, $a0, 48		#al residuo le sumo 48 para sacar el ascii
+		sb $t0, ($v0)			#guardo el ultimo carcater
+		addi $v0, $v0, 1		#aumento el buffer
+		addi $v1, $v1, 1		#aumento los caracteres
+		
+	IReturn:
+		la $v0, string			#recupero el inicio del buffer
+		jr $ra				#retorno la funcion
 		
 		
 		
