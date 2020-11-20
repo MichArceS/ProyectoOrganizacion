@@ -20,6 +20,9 @@ textErr:	.asciiz "El equipo no existe"
 file:       .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
 file2:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
 
+file3:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
+file4:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
+
 
 
 textLocal:	.asciiz "Ingrese equipo local: \n"
@@ -40,7 +43,7 @@ main:
 	fileReading:
 		#Opening a file
 		li $v0, 13
-		la $a0, file
+		la $a0, file3
 		li $a1, 0
 		syscall
 		move $s0, $v0
@@ -128,7 +131,7 @@ main:
 		
 		#Opening a file
 		li $v0, 13
-		la $a0, file2
+		la $a0, file4
 		li $a1, 1
 		syscall
 		move $s0, $v0	
@@ -468,7 +471,7 @@ enterMatch:
 		move $v0, $a0
 		jal serch
 		
-		move $v0, $t0 #$t0 -> indice del equipo local
+		move $t0, $v0 #$t0 -> indice del equipo local
 		
 		li $t0, 1
 		syscall
@@ -486,7 +489,7 @@ enterMatch:
 		move $v0, $a0
 		jal serch
 		
-		move $v0, $t1 #$t1 -> indice del equipo visitante
+		move $t1, $v0 #$t1 -> indice del equipo visitante
 		
 		blt $t0, $zero, errorEquipos #Comprobar si el equipo existe
 
@@ -496,7 +499,7 @@ enterMatch:
 	
 		li $v0, 5
 		syscall
-		move $v0, $t2 #$t2 -> goles del equipo local
+		move $t2, $v0 #$t2 -> goles del equipo local
 			
 		li $v0, 4
 		la $a0, textMarcadorV
@@ -504,7 +507,7 @@ enterMatch:
 		
 		li $v0, 5
 		syscall
-		move $v0, $t3 #$t3 -> goles del equipo visitante
+		move $t3, $v0 #$t3 -> goles del equipo visitante
 		
 		#Bloque switch
 
@@ -513,38 +516,38 @@ enterMatch:
 		j empate
 
 		localGanador:
-			move $t0, $a0
-			move $t2, $a1
-			move $t3, $a2
+			move $a0, $t0
+			move $a1, $t2
+			move $a2, $t3
 			jal winner
 
-			move $t1, $a0
-			move $t3, $a1
-			move $t2, $a2
+			move $a0, $t1
+			move $a1, $t3
+			move $a2, $t2
 			jal looser
 			j exitEnterMatch
 		
 		visitanteGanador:
-			move $t1, $a0
-			move $t3, $a1
-			move $t2, $a2
+			move $a0, $t1
+			move $a1, $t3
+			move $a2, $t2
 			jal winner
 
-			move $t0, $a0
-			move $t2, $a1
-			move $t3, $a2
+			move $a0, $t0
+			move $a1, $t2
+			move $a2, $t3
 			jal looser
 			j exitEnterMatch
 		
 		empate:
-			move $t0, $a0
-			move $t2, $a1
-			move $t3, $a2
+			move $a0, $t0
+			move $a1, $t2
+			move $a2, $t3
 			jal tie
 
-			move $t1, $a0
-			move $t3, $a1
-			move $t2, $a2
+			move $a0, $t1
+			move $a1, $t3
+			move $a2, $t2
 			jal tie
 			j exitEnterMatch
 
@@ -560,12 +563,12 @@ winner:	# $a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		la $t9, matrix
 		
 		#cargar direcciï¿½n de los puntos
-		mul $t0, $a0, 2
-		addi $t0, $t0, 4
+		mul $t0, $a0, 8
+		mul $t0, $t0, 4
 		add $t0, $t0, $t9
-		lw $t0, 0($t0)
+		lw $t8, 0($t0)
 		
-		addi, $t1, $t0, 3	#sumar tres puntos
+		addi, $t1, $t8, 3	#sumar tres puntos
 		sw  $t1, 0($t0) 
 		
 		#cargar direcciï¿½n de los partidos jugados
