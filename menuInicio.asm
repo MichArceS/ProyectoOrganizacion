@@ -364,6 +364,13 @@ stringToInt:	#Recibe en a0 el puntero al buffer y $a2 la cantidad de caracteres
 		jr $ra
 		
 IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en ascii y v1 la cantidad de caracteres.
+		#Reserva
+		addi $sp, $sp, -16
+		sw $t0, 0($sp)
+		sw $t1, 4($sp)
+		sw $t2, 8($sp)
+		sw $t6, 12($sp)
+		
 		la $v0, string
 		li $v1, 0
 		li $t1, 10
@@ -397,6 +404,13 @@ IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en
 		
 	IReturn:
 		la $v0, string			#recupero el inicio del buffer
+		
+		lw $t0, 0($sp)
+		lw $t1, 4($sp)
+		lw $t2, 8($sp)
+		lw $t6, 12($sp)
+		addi $sp, $sp, 16
+		
 		jr $ra				#retorno la funcion
 		
 		
