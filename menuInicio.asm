@@ -2,10 +2,11 @@
 .data 
 
 buffer:     .space 1024
+savebuffer: .space 1024
 matrix:	    .space 512
 teams:	    .space 1024
 team:       .space 40
-string:     .space 8
+string:     .space 4
 numChars:   .word 6
 
 text1:      .asciiz "Bienvenido!\n"
@@ -35,6 +36,29 @@ menos:      .byte '-'
 
 .text
 main:
+	fileReading:
+		#Opening a file
+		li $v0, 13
+		la $a0, file
+		li $a1, 0
+		syscall
+		move $s0, $v0
+
+		#Reading a file
+		li $v0, 14
+		move $a0, $s0
+		la $a1, buffer
+		li $a2, 1024
+		syscall
+		
+		#Closing the file
+		li $v0, 16
+		move $a0, $s0
+		syscall
+
+		#Processing File
+		jal readFile
+		
 	#Menu
 	li $v0, 4
 	la $a0, text1
@@ -75,11 +99,13 @@ main:
 	beq $t0, 3, case3
 	beq $t0, 4, case4
 	
+	
+		
 	case1:
 		li $v0, 4
 		la $a0, text3
 		syscall
-		j fileReading
+		j Save
 	case2:
 		li $v0, 4
 		la $a0, text4
@@ -96,34 +122,11 @@ main:
 		syscall
 		j Exit
 		
-	fileReading:
+		#Make Buffer File
+	Save:	jal saveFile
+		
 		#Opening a file
 		li $v0, 13
-		la $a0, file
-		li $a1, 0
-		syscall
-		move $s0, $v0
-
-		#Reading a file
-		li $v0, 14
-		move $a0, $s0
-		la $a1, buffer
-		li $a2, 1024
-		syscall
-		
-		#Closing the file
-		li $v0, 16
-		move $a0, $s0
-		syscall
-
-		#Processing File
-		jal readFile
-		
-		#Make Buffer File
-		jal saveFile
-		
-		#Opening a file
-	Save:	li $v0, 13
 		la $a0, file2
 		li $a1, 1
 		syscall
@@ -131,7 +134,7 @@ main:
 		
 		li $v0, 15
 		move $a0, $s0
-		la $a1, buffer
+		la $a1, savebuffer
 		li $a2, 512
 		syscall
 		
@@ -179,7 +182,6 @@ readFile:
 		
 		
 		sb $t0, 0($s2)			#se agrega una coma al array de equipos
-		#hay que ver si se agrega como byte o como word pero hay que alinearlo.
 		addi $s2,$s2, 1			#se aumenta el indice
 		j continue			
 	
@@ -218,8 +220,6 @@ readFile:
 		addi $s1,$s1,1			#Se aumenta el indice del buffer
 		j Loop
 		
-		
-		
 	rfend:					#Guarda la coma y cambia el flag para no guardar
 		lw $ra, ($sp)
 		addi $sp, $sp, 4
@@ -227,29 +227,68 @@ readFile:
 
 	
 saveFile:
-		addi $sp, $sp, -4
-		sw $ra, ($sp)
+		addi $sp, $sp, -16
+		sw $ra, 0($sp)
+		sw $t0, 4($sp)
+		sw $t1, 8($sp)
+		sw $t3, 12($sp)
 		
 		la $s1, matrix
+		la $s2, teams
 		la $t0, ($s1)
-		la $t1, buffer
+		la $t1, savebuffer
+		lb $s3, coma
+		lb $s4, salto
+		li $t6, 0
+		j tim
 		
+	tim1:
+		li $t6, 0				#contador
+		sb $s4, ($t1)
+		addi $t1, $t1, 1
+	tim:
+		lb $t5, ($s2)
+		beq $t5, $s3, comma
+		sb  $t5, ($t1)
+		addi $t1, $t1, 1
+		addi $s2, $s2, 1
+		j tim
+	
+	comma:	
+		sb $s3, ($t1)
+		addi $t1, $t1, 1
+		addi $t6, $t6, 1
+		addi $s2, $s2, 1
 	byte:
+		beq $t6, 9, tim1
 		lw $a0, ($t0)
-		jal IntToString
+		jal IntToString				
 		
 	guardarAscii:
-		addi $t3, $t0, -512
-		beq $t3, $s1, readReturn
-		beq $v1, 0, readReturn
-		sb  $v0, ($t1)
-		addi $t1, $t1, 1
-		addi $v1, $v1, -1
+		addi $t3, $t0, -516			
+		beq $t3, $s1, readReturn		#Identifica si termino de recorrer la matriz
+		beq $v1, 0, cont			#Si ya no hay caracteres por reccorrer
+		lb $t2, ($v0)				#cargo el byte
+		sb  $t2, ($t1)				#Guarda los caracteres ascii de la string
+		addi $t1, $t1, 1			#Aumenta el buffer
+		addi $v0, $v0, 1
+		addi $v1, $v1, -1			#resta el caracter
 		j guardarAscii
+	
+	cont:
 		
+		sb $s3, ($t1)
+		addi $t1, $t1, 1
+		addi $t0, $t0, 4
+		addi $t6, $t6, 1
+		j byte
+	
 	readReturn:
-		lw $ra, ($sp)
-		addi $sp, $sp, 4
+		lw $ra, 0($sp)
+		lw $t0, 4($sp)
+		lw $t1, 8($sp)
+		lw $t3, 12($sp)
+		addi $sp, $sp, 16
 		
 		jr $ra
 		
@@ -372,9 +411,10 @@ IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en
 		sw $t6, 12($sp)
 		
 		la $v0, string
+		sw $zero, ($v0)
 		li $v1, 0
 		li $t1, 10
-		la $t2, menos
+		lb $t2, menos
 		bge $a0, 0, positivo
 		
 		sb $t2, ($v0)			#Si es negativo, guardo el caracter menos al principio
@@ -387,9 +427,9 @@ IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en
 		
 	positivo:
 		blt $a0, 10, caract1		#si es menor a 10 solo tiene un caracter
-		div $a0, $t6			#si es mayor se divide para 10
-		mfhi $t2			#sacamos el modulo
-		mflo $a0			#sacamos el residuo y lo guardamos para ser procesado por caract1
+		div $a0, $t1			#si es mayor se divide para 10
+		mfhi $a0			#sacamos el modulo
+		mflo $t2			#sacamos el residuo y lo guardamos para ser procesado por caract1
 		
 		addi $t2, $t2, 48		#al modulo le sumamos 48 para sacar el ascii
 		sb $t2, ($v0)			#guardamos el primer caracter
@@ -397,8 +437,8 @@ IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en
 		addi $v1, $v1, 1		#aumento los caracteres
 		
 	caract1:
-		addi $t0, $a0, 48		#al residuo le sumo 48 para sacar el ascii
-		sb $t0, ($v0)			#guardo el ultimo carcater
+		addiu $a0, $a0, 48		#al residuo le sumo 48 para sacar el ascii
+		sb $a0, ($v0)			#guardo el ultimo carcater
 		addi $v0, $v0, 1		#aumento el buffer
 		addi $v1, $v1, 1		#aumento los caracteres
 		
