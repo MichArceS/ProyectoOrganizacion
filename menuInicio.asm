@@ -4,8 +4,9 @@
 buffer:     .space 1024
 savebuffer: .space 1024
 matrix:	    .space 512
-teams:	    .space 1024
-team:       .space 40
+teams:	    .space 512
+team:       .space 32
+temp:       .space 32
 string:     .space 4
 numChars:   .word 6
 
@@ -119,7 +120,7 @@ main:
 		li $v0, 4
 		la $a0, text5
 		syscall
-		j main
+		j ordenar
 	case4:
 		li $v0, 4
 		la $a0, text6
@@ -147,7 +148,11 @@ main:
 		move $a0, $s0
 		syscall
 		j main
-			
+	
+	ordenar:
+		li $a0, 0
+		li $a1, 4
+		jal intercambio
 Exit:
 	li $v0, 10
 	syscall
@@ -162,6 +167,7 @@ readFile:
 		
 		la $s1, buffer			#File Buffer
 		la $s2, teams			#Teams Array
+		li $t8, 0			#Index of teams
 		la $s6, matrix			#Matrix
 		li $t1, 0 			# Linea Flag - Indica si ya se encontro la primera coma.
 		lb $s3, coma			
@@ -173,7 +179,6 @@ readFile:
 	Loop:	lb $t0, 0($s1)			#carga el caracter
 
 		beq $t0, $zero, rfend 		#Se verifica que se acabo el string
-		beq $t0, $s5, lin 		#Se verifica un salto de linea
 		beq $t1, 1, points 		#Si ya hubo una coma, pasa a guardar los puntos
 		beq $t0, $s3, com		#Se verifica si es una coma
 		
@@ -183,8 +188,7 @@ readFile:
 		
 		
 	com:	li $t1, 1			#Cuando encuentra la primera coma e flag pasa a 1.
-		
-		
+	
 		sb $t0, 0($s2)			#se agrega una coma al array de equipos
 		addi $s2,$s2, 1			#se aumenta el indice
 		j continue			
@@ -207,6 +211,10 @@ readFile:
 		li $t1, 0			#Si encontro una linea, hace el flag 0 
 		addi $t2, $t2, -1		#Se quita un caracter, porque por algun motivo el salto de linea tiene 2 caracteres,
 						#pero el codigo ascii solo reconoce uno jeje
+		la $s2, teams
+		addi $t8, $t8, 32
+		add $s2, $s2, $t8
+		
 	guardar:
 		add $a2, $t2, $zero		#ingresa el argumento
 		jal stringToInt			#llama a la funcion
@@ -216,9 +224,8 @@ readFile:
 		sw $v0, 0($t9)			#Guarda los puntos
 		addi $s7, $s7, 1
 		j continue
+
 		
-	lin:	li $t1, 0 			#Cuando hay un salto de linea, el flag pasa a 0
-	
      continue:  
      		beq $t0, $zero, rfend			
 		addi $s1,$s1,1			#Se aumenta el indice del buffer
@@ -239,6 +246,7 @@ saveFile:
 		
 		la $s1, matrix
 		la $s2, teams
+		li $t8, 0 
 		la $t0, ($s1)
 		la $t1, savebuffer
 		lb $s3, coma
@@ -253,6 +261,7 @@ saveFile:
 	tim:
 		lb $t5, ($s2)
 		beq $t5, $s3, comma
+		beq $t5, $zero, readReturn
 		sb  $t5, ($t1)
 		addi $t1, $t1, 1
 		addi $s2, $s2, 1
@@ -262,8 +271,11 @@ saveFile:
 		sb $s3, ($t1)
 		addi $t1, $t1, 1
 		addi $t6, $t6, 1
-		addi $s2, $s2, 1
+		addi $t8, $t8, 32
+		la $s2, teams
+		add $s2, $s2, $t8
 	byte:
+		
 		beq $t6, 9, tim1
 		lw $a0, ($t0)
 		jal IntToString				
@@ -741,3 +753,60 @@ tie:	##$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		add, $t1, $t2, $t3	#restar a favor y en contra
 		sw  $t1, 0($t0)
 		jr $ra
+
+intercambio:	#Funcion que intercambia elementos del los arreglos, a0 Indice 1 y a1 indice 2.
+		la $s1, temp
+		la $s2, matrix
+		la $s3, teams
+		li $t0, 0
+	
+		mul $t1, $a0, 32
+		add $t1, $s2, $t1
+	
+	l1:	beq $t0, 32, ll2
+		lb $t2, ($t1)
+		sb $t2, ($s1)
+		addi $t1, $t1, 1
+		addi $t0, $t0, 1
+		addi $s1, $s1, 1
+		j l1
+		
+	ll2: 	li $t0, 0	
+	
+		mul $t1, $a0, 32
+		add $t1, $s2, $t1
+			
+		mul $t2, $a1, 32
+		add $t2, $s2, $t2
+		
+	l2:	beq $t0, 32, ll3
+		lb $t3, ($t2)
+		sb $t3, ($t1)
+		addi $t1, $t1, 1
+		addi $t0, $t0, 1
+		addi $t2, $t2, 1
+		j l2
+	
+	ll3:	li $t0, 0	
+	
+		la $s1, temp
+			
+		mul $t2, $a1, 32
+		add $t2, $s2, $t2
+	
+	
+	l3:	beq $t0, 32, interReturn
+		lb $t3, ($s1)
+		sb $t3, ($t2)
+		addi $t2, $t2, 1
+		addi $t0, $t0, 1
+		addi $s1, $s1, 1
+		j l3
+		
+	interReturn:
+		jr $ra
+	
+		
+	
+insertionSort:  #Funcion que ordena la matriz 	
+	
