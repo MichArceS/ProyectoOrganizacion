@@ -16,8 +16,9 @@ text4:      .asciiz "2) Ingresar partido\n"
 text5:      .asciiz "3) Mostrar Top 3\n"
 text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
-file:       .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
-file2:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
+textErr:	.asciiz "El equipo no existe"
+file:       .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
+file2:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
 
 
 
@@ -456,36 +457,284 @@ IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en
 		
 		
 enterMatch:
+        
 		li $v0, 4
 		la $a0, textLocal
 		syscall
-	
+		
 		li $v0, 8
-        	syscall
-        	move $a0, $s0
-        	
+		syscall
+		
+		move $v0, $a0
+		jal serch
+		
+		move $v0, $t0 #$t0 -> indice del equipo local
+		
+		li $t0, 1
+		syscall
+		
+		blt $t0, $zero, errorEquipos #Comprobar si el equipo existe
+
 		li $v0, 4
 		la $a0, textVisitante
 		syscall
 	
 		li $v0, 8
-	        syscall
-		move $a0, $s1
+		syscall
 		
+		addi $v0, $v0, -1
+		move $v0, $a0
+		jal serch
+		
+		move $v0, $t1 #$t1 -> indice del equipo visitante
+		
+		blt $t0, $zero, errorEquipos #Comprobar si el equipo existe
+
 		li $v0, 4
 		la $a0, textMarcadorL
-		syscall
+		syscall 
 	
 		li $v0, 5
-        	syscall
-        	move $a0, $s2
-        	
+		syscall
+		move $v0, $t2 #$t2 -> goles del equipo local
+			
 		li $v0, 4
 		la $a0, textMarcadorV
 		syscall
 		
 		li $v0, 5
-        	syscall
-        	move $a0, $s3
-        	
-        	jr $ra
+		syscall
+		move $v0, $t3 #$t3 -> goles del equipo visitante
+		
+		#Bloque switch
+
+		blt $t3, $t2, localGanador
+		blt $t2, $t3, visitanteGanador
+		j empate
+
+		localGanador:
+			move $t0, $a0
+			move $t2, $a1
+			move $t3, $a2
+			jal winner
+
+			move $t1, $a0
+			move $t3, $a1
+			move $t2, $a2
+			jal looser
+			j exitEnterMatch
+		
+		visitanteGanador:
+			move $t1, $a0
+			move $t3, $a1
+			move $t2, $a2
+			jal winner
+
+			move $t0, $a0
+			move $t2, $a1
+			move $t3, $a2
+			jal looser
+			j exitEnterMatch
+		
+		empate:
+			move $t0, $a0
+			move $t2, $a1
+			move $t3, $a2
+			jal tie
+
+			move $t1, $a0
+			move $t3, $a1
+			move $t2, $a2
+			jal tie
+			j exitEnterMatch
+
+		errorEquipos:
+			li $v0, 4
+			la $a0, textErr
+			syscall
+
+		exitEnterMatch: 
+			j main
+			
+winner:	# $a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
+		la $t9, matrix
+		
+		#cargar direcciï¿½n de los puntos
+		mul $t0, $a0, 2
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 3	#sumar tres puntos
+		sw  $t1, 0($t0) 
+		
+		#cargar direcciï¿½n de los partidos jugados
+		mul $t0, $a0, 8
+		addi $t0, $t0, 1
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 1	#aumentar partidos jugados
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de los partidos ganados
+		mul $t0, $a0, 8
+		addi $t0, $t0, 2
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 1	#aumentar partidos ganados
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de goles a favor
+		mul $t0, $a0, 8
+		addi $t0, $t0, 5
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		add $t2, $t0, $zero
+		
+		add, $t1, $t0, $a1	#aumentar goles
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de goles en contra
+		mul $t0, $a0, 8
+		addi $t0, $t0, 6
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		add $t3, $t0, $zero
+		
+		add, $t1, $t0, $a2	#aumentar goles
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de diferencia de goles
+		mul $t0, $a0, 8
+		addi $t0, $t0, 7
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		
+		add, $t1, $t2, $t3	#restar a favor y en contra
+		sw  $t1, 0($t0)
+		jr $ra
+
+looser:	#$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
+		la $t9, matrix
+		
+		#cargar direcciï¿½n de los partidos jugados
+		mul $t0, $a0, 8
+		addi $t0, $t0, 1
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 1	#aumentar partidos jugados
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de los partidos perdidos
+		mul $t0, $a0, 8
+		addi $t0, $t0, 4
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 1	#aumentar partidos perdidos
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de goles a favor
+		mul $t0, $a0, 8
+		addi $t0, $t0, 5
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		add $t2, $t0, $zero
+		
+		add, $t1, $t0, $a1	#aumentar goles
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de goles en contra
+		mul $t0, $a0, 8
+		addi $t0, $t0, 6
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		add $t3, $t0, $zero
+		
+		add, $t1, $t0, $a2	#aumentar goles
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de diferencia de goles
+		mul $t0, $a0, 8
+		addi $t0, $t0, 7
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		
+		add, $t1, $t2, $t3	#restar a favor y en contra
+		sw  $t1, 0($t0)
+		jr $ra
+		
+tie:	##$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
+		la $t9, matrix
+
+		#cargar direcciï¿½n de los puntos
+		mul $t0, $a0, 8
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0) 
+		
+		addi, $t1, $t0, 1	#sumar un puntos
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de los partidos jugados
+		mul $t0, $a0, 8
+		addi $t0, $t0, 1
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 1	#aumentar partidos jugados
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de los partidos empatados
+		mul $t0, $a0, 8
+		addi $t0, $t0, 3
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		
+		addi, $t1, $t0, 1	#aumentar partidos empatados
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de goles a favor
+		mul $t0, $a0, 8
+		addi $t0, $t0, 5
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		add $t2, $t0, $zero
+		
+		add, $t1, $t0, $a1	#aumentar goles
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de goles en contra
+		mul $t0, $a0, 8
+		addi $t0, $t0, 6
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t0, 0($t0)
+		add $t3, $t0, $zero
+		
+		add, $t1, $t0, $a2	#aumentar goles
+		sw  $t1, 0($t0)
+		
+		#cargar direcciï¿½n de diferencia de goles
+		mul $t0, $a0, 8
+		addi $t0, $t0, 7
+		addi $t0, $t0, 4
+		add $t0, $t0, $t9
+		
+		add, $t1, $t2, $t3	#restar a favor y en contra
+		sw  $t1, 0($t0)
+		jr $ra
