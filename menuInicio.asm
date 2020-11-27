@@ -17,12 +17,12 @@ text4:      .asciiz "2) Ingresar partido\n"
 text5:      .asciiz "3) Mostrar Top 3\n"
 text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
-textErr:	.asciiz "El equipo no existe"
-file3:       .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organizaciï¿½n de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
-file4:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organizaciï¿½n de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
+textErr:	.asciiz "El equipo no existe\n"
+file1:       .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
+file2:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
 
-file1:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
-file2:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
+file3:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
+file4:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
 
 
 
@@ -116,7 +116,7 @@ main:
 		li $v0, 4
 		la $a0, text4
 		syscall
-		jal enterMatch
+		j enterMatch
 	case3:
 		li $v0, 4
 		la $a0, text5
@@ -473,11 +473,11 @@ IntToString:	#Recibe en a0 el numero y retorna en v0 la direccion al caracter en
 		
 		
 enterMatch:
-        
 		li $v0, 4
 		la $a0, textLocal
 		syscall
 		
+		la $a0, buffer
 		li $v0, 8
 		syscall
 		
@@ -492,6 +492,7 @@ enterMatch:
 		la $a0, textVisitante
 		syscall
 	
+		la $a0, buffer
 		li $v0, 8
 		syscall
 		
@@ -500,7 +501,7 @@ enterMatch:
 		
 		move $t1, $v0 #$t1 -> indice del equipo visitante
 		
-		blt $t0, $zero, errorEquipos #Comprobar si el equipo existe
+		blt $t1, $zero, errorEquipos #Comprobar si el equipo existe
 
 		li $v0, 4
 		la $a0, textMarcadorL
@@ -566,6 +567,14 @@ enterMatch:
 			syscall
 
 		exitEnterMatch: 
+			add $v0, $zero, $zero
+			add $a0, $zero, $zero
+			add $a1, $zero, $zero
+			add $a2, $zero, $zero
+			add $t0, $zero, $zero
+			add $t1, $zero, $zero
+			add $t2, $zero, $zero
+			add $t3, $zero, $zero
 			j menu
 			
 winner:	# $a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
