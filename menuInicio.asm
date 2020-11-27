@@ -17,8 +17,8 @@ text4:      .asciiz "2) Ingresar partido\n"
 text5:      .asciiz "3) Mostrar Top 3\n"
 text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
-textErr:	.asciiz "El equipo no existe\n"
-file1:       .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
+textErr:    .asciiz "El equipo no existe\n"
+file1:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
 file2:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
 
 file3:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
@@ -44,7 +44,7 @@ main:
 	fileReading:
 		#Opening a file
 		li $v0, 13
-		la $a0, file1
+		la $a0, file3
 		li $a1, 0
 		syscall
 		move $s0, $v0
@@ -133,7 +133,7 @@ main:
 		
 		#Opening a file
 		li $v0, 13
-		la $a0, file2
+		la $a0, file4
 		li $a1, 1
 		syscall
 		move $s0, $v0	
@@ -319,19 +319,22 @@ serch:		#Retorna el indicice del equipo - a0 equipo - v0 indice
 		sw $t4, 16($sp)
 		sw $t5, 20($sp)
 		
-		li $t0, 0
+		li $t0, 0			#indice
 		la $t1, teams
 		lb $t3, coma
 		
 		
 	ingreso:	
 		la $t2, ($a0)			#Carga la direccion del  ingreso
-	
+		sll $t6, $t0, 5
+		add $t6, $t6, $t1
+		
 	stringCmp:				#Compara byte por byte el nombre
-		lb $t4, ($t1)   		#Carga byte de equipo
+		
+		lb $t4, ($t6)   		#Carga byte de equipo
 		lb $t5, ($t2)			#Carga byte de ingreso
 		bne $t4, $t5, out		#Si no son iguales sale
-		addi $t1, $t1, 1
+		addi $t6, $t6, 1
 		addi $t2, $t2, 1
 		j stringCmp			
 	out:
@@ -339,16 +342,9 @@ serch:		#Retorna el indicice del equipo - a0 equipo - v0 indice
 		move $v0, $t0 			#Si la salida fue por la coma, quiere decir que todo el nombre es igual. Retorna el indice
 		j sReturn			#Sale de la funcion 
 		
-	next:	
-		lb $t4, ($t1)			#En el caso de que no haya sigo por una coma. continua recorriendo los equipos
-		beq $t4, $zero, sReturnN	#Si el buffer ya llego al final, sale de la funcion retornando -1.
-		beq $t4, $t3, saltar		#Si llega a una coma, vuelve a comparar.
-		addi $t1, $t1, 1
-		j next
-
-	saltar:
-		addi $t1, $t1, 1		#Avanza uno para omitir la coma
+	next:					#En el caso de que no haya sigo por una coma. continua recorriendo los equipos
 		addi $t0, $t0, 1		#Como avanza a un nuevo equipo, el indice aumenta 1.
+		bge $t0, 16, sReturnN		#Si el buffer ya llego al final, sale de la funcion retornando -1.
 		j ingreso			#Vuelve a comparar
 		
 	sReturnN:
