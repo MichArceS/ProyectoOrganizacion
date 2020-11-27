@@ -44,7 +44,7 @@ main:
 	fileReading:
 		#Opening a file
 		li $v0, 13
-		la $a0, file3
+		la $a0, file1
 		li $a1, 0
 		syscall
 		move $s0, $v0
@@ -121,7 +121,7 @@ main:
 		li $v0, 4
 		la $a0, text5
 		syscall
-		j ordenar
+		j bubbleSort
 	case4:
 		li $v0, 4
 		la $a0, text6
@@ -133,7 +133,7 @@ main:
 		
 		#Opening a file
 		li $v0, 13
-		la $a0, file4
+		la $a0, file2
 		li $a1, 1
 		syscall
 		move $s0, $v0	
@@ -716,11 +716,21 @@ tie:	##$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		add $t0, $t0, $t9
 		lw $t8, 0($t0)
 		
-		addi, $t1, $t8, 1	#aumentar partidos empatados
+		addi $t1, $t8, 1	#aumentar partidos empatados
 		sw  $t1, 0($t0)
 		jr $ra
 
 intercambio:	#Funcion que intercambia elementos del los arreglos, a0 Indice 1 y a1 indice 2.
+		addi $sp, $sp, -32
+		sw $t0, 0($sp)
+		sw $t1, 4($sp)
+		sw $t2, 8($sp)
+		sw $t3, 12($sp)
+		sw $s1, 16($sp)
+		sw $s2, 20($sp)
+		sw $s3, 24($sp)
+		sw $ra, 28($sp)
+		
 		la $s1, temp
 		la $s2, matrix
 		la $s3, teams
@@ -770,9 +780,58 @@ intercambio:	#Funcion que intercambia elementos del los arreglos, a0 Indice 1 y 
 		j l3
 		
 	interReturn:
+	
+		
+		lw $t0, 0($sp)
+		lw $t1, 4($sp)
+		lw $t2, 8($sp)
+		lw $t3, 12($sp)
+		lw $s1, 16($sp)
+		lw $s2, 20($sp)
+		lw $s3, 24($sp)
+		addi $sp, $sp, 28
 		jr $ra
 	
 		
 	
-#insertionSort:  #Funcion que ordena la matriz 	
-		#jr $ra
+bubbleSort:  #Funcion que ordena la matriz 	
+		
+		#Reseverva
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		
+		li $s1, 16			#n
+		li $t0, 0 			#i
+		la $s0, matrix			#matriz
+		
+	for1: 	
+		bge $t0, $s1, end 	
+		addi $t1, $t0, 1		#j = i+1
+	for2:	
+		bge $t1, $s1, cont1
+		
+		mul $t4, $t0, 32
+		add $t4, $t4, $s0
+		lw $s2, 0($t4)
+		
+		mul $t4, $t1, 32
+		add $t4, $t4, $s0
+		lw $s3, 0($t4)
+	
+		blt $s3, $s2, cont2
+		
+		add $a0, $zero, $t0
+		add $a1, $zero, $t1
+		
+		jal intercambio
+	
+	cont2:	addi $t1, $t1,1
+		j for2
+		
+	cont1:	addi $t0, $t0, 1
+		j for1
+		 
+	end:
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
