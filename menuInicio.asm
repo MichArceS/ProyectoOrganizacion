@@ -64,6 +64,8 @@ main:
 		#Processing File
 		jal readFile
 		
+		jal bubbleSort
+		
 	#Menu
 	menu:
 	li $v0, 4
@@ -148,6 +150,11 @@ main:
 		li $v0, 16
 		move $a0, $s0
 		syscall
+		
+		li $v0, 4
+		la $a0, savebuffer
+		syscall
+		
 		j main
 	
 	ordenar:
@@ -583,6 +590,7 @@ enterMatch:
 			add $t1, $zero, $zero
 			add $t2, $zero, $zero
 			add $t3, $zero, $zero
+			jal bubbleSort
 			j menu
 			
 winner:	# $a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
