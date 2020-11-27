@@ -7,6 +7,7 @@ matrix:	    .space 512
 teams:	    .space 512
 team:       .space 32
 temp:       .space 32
+temp2:	    .space 32
 string:     .space 4
 numChars:   .word 6
 
@@ -44,7 +45,7 @@ main:
 	fileReading:
 		#Opening a file
 		li $v0, 13
-		la $a0, file3
+		la $a0, file1
 		li $a1, 0
 		syscall
 		move $s0, $v0
@@ -135,7 +136,7 @@ main:
 		
 		#Opening a file
 		li $v0, 13
-		la $a0, file4
+		la $a0, file2
 		li $a1, 1
 		syscall
 		move $s0, $v0	
@@ -815,51 +816,77 @@ intercambio:	#Funcion que intercambia elementos del los arreglos, a0 Indice 1 y 
 		sw $ra, 28($sp)
 		
 		la $s1, temp
+		la $s4, temp2
+		
 		la $s2, matrix
 		la $s3, teams
 		li $t0, 0
 	
 		mul $t1, $a0, 32
 		add $t1, $s2, $t1
+		
+		mul $t4, $a0, 32
+		add $t4, $s3, $t4
 	
 	l1:	beq $t0, 32, ll2
 		lb $t2, ($t1)
+		lb $t5, ($t4)
 		sb $t2, ($s1)
+		sb $t5, ($s4)
 		addi $t1, $t1, 1
-		addi $t0, $t0, 1
+		addi $t4, $t4, 1
 		addi $s1, $s1, 1
+		addi $s4, $s4, 1
+		addi $t0, $t0, 1
 		j l1
 		
 	ll2: 	li $t0, 0	
 	
 		mul $t1, $a0, 32
 		add $t1, $s2, $t1
-			
+		
 		mul $t2, $a1, 32
 		add $t2, $s2, $t2
 		
+		mul $t4, $a0, 32
+		add $t4, $s3, $t4
+		
+		mul $t5, $a1, 32
+		add $t5, $s3, $t5
+		
 	l2:	beq $t0, 32, ll3
 		lb $t3, ($t2)
+		lb $t6, ($t5)
 		sb $t3, ($t1)
+		sb $t6, ($t4)
 		addi $t1, $t1, 1
-		addi $t0, $t0, 1
 		addi $t2, $t2, 1
+		addi $t4, $t4, 1
+		addi $t5, $t5, 1
+		addi $t0, $t0, 1
 		j l2
 	
 	ll3:	li $t0, 0	
 	
 		la $s1, temp
+		la $s4, temp2
 			
 		mul $t2, $a1, 32
 		add $t2, $s2, $t2
-	
+		
+		mul $t4, $a1, 32
+		add $t4, $s3, $t4
 	
 	l3:	beq $t0, 32, interReturn
 		lb $t3, ($s1)
+		lb $t5, ($s4)
 		sb $t3, ($t2)
+		sb $t5, ($t4)
 		addi $t2, $t2, 1
-		addi $t0, $t0, 1
+		addi $t4, $t4, 1
 		addi $s1, $s1, 1
+		addi $s4, $s4, 1
+		addi $t0, $t0, 1
 		j l3
 		
 	interReturn:
