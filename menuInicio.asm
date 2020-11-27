@@ -18,11 +18,11 @@ text5:      .asciiz "3) Mostrar Top 3\n"
 text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
 textErr:    .asciiz "El equipo no existe\n"
-file1:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
-file2:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
+file3:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
+file4:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
 
-file3:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
-file4:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
+file1:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
+file2:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
 
 
 
@@ -522,38 +522,50 @@ enterMatch:
 		j empate
 
 		localGanador:
+			add $t4, $zero, $t3
+			add $t5, $zero, $t2
+			add $t6, $zero, $t1
+		
 			move $a0, $t0
 			move $a1, $t2
 			move $a2, $t3
 			jal winner
 
-			move $a0, $t1
-			move $a1, $t3
-			move $a2, $t2
+			move $a0, $t6
+			move $a1, $t4
+			move $a2, $t5
 			jal looser
 			j exitEnterMatch
 		
 		visitanteGanador:
+			add $t4, $zero, $t2
+			add $t5, $zero, $t3
+			add $t6, $zero, $t0
+		
 			move $a0, $t1
 			move $a1, $t3
 			move $a2, $t2
 			jal winner
 
-			move $a0, $t0
-			move $a1, $t2
-			move $a2, $t3
+			move $a0, $t6
+			move $a1, $t4
+			move $a2, $t5
 			jal looser
 			j exitEnterMatch
 		
 		empate:
+			add $t4, $zero, $t3
+			add $t5, $zero, $t2
+			add $t6, $zero, $t1
+		
 			move $a0, $t0
 			move $a1, $t2
 			move $a2, $t3
 			jal tie
 
-			move $a0, $t1
-			move $a1, $t3
-			move $a2, $t2
+			move $a0, $t6
+			move $a1, $t4
+			move $a2, $t5
 			jal tie
 			j exitEnterMatch
 
@@ -635,6 +647,18 @@ winner:	# $a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		
 		sub $t1, $t2, $t3	#restar a favor y en contra
 		sw  $t1, 0($t0)
+		
+		add $v0, $zero, $zero
+		add $a0, $zero, $zero
+		add $a1, $zero, $zero
+		add $a2, $zero, $zero
+		add $t8, $zero, $zero
+		add $t9, $zero, $zero
+		add $t0, $zero, $zero
+		add $t1, $zero, $zero
+		add $t2, $zero, $zero
+		add $t3, $zero, $zero
+				
 		jr $ra
 
 looser:	#$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
@@ -690,6 +714,18 @@ looser:	#$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		
 		sub, $t1, $t2, $t3	#restar a favor y en contra
 		sw  $t1, 0($t0)
+		
+		add $v0, $zero, $zero
+		add $a0, $zero, $zero
+		add $a1, $zero, $zero
+		add $a2, $zero, $zero
+		add $t8, $zero, $zero
+		add $t9, $zero, $zero
+		add $t0, $zero, $zero
+		add $t1, $zero, $zero
+		add $t2, $zero, $zero
+		add $t3, $zero, $zero
+		
 		jr $ra
 		
 tie:	##$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
@@ -714,6 +750,28 @@ tie:	##$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		addi, $t1, $t8, 1	#aumentar partidos jugados
 		sw  $t1, 0($t0)
 		
+		#cargar direcciï¿½n de goles a favor
+		mul $t0, $a0, 8
+		addi $t0, $t0, 5
+		mul $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t8, 0($t0)
+		
+		add, $t1, $t8, $a1	#aumentar goles
+		sw  $t1, 0($t0)
+		add $t2, $t1, $zero
+		
+		#cargar direcciï¿½n de goles en contra
+		mul $t0, $a0, 8
+		addi $t0, $t0, 6
+		mul $t0, $t0, 4
+		add $t0, $t0, $t9
+		lw $t8, 0($t0)
+		
+		add, $t1, $t8, $a1	#aumentar goles
+		sw  $t1, 0($t0)
+		add $t2, $t1, $zero
+		
 		#cargar direcciï¿½n de los partidos empatados
 		mul $t0, $a0, 8
 		addi $t0, $t0, 3
@@ -723,6 +781,18 @@ tie:	##$a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		
 		addi $t1, $t8, 1	#aumentar partidos empatados
 		sw  $t1, 0($t0)
+				
+		add $v0, $zero, $zero
+		add $a0, $zero, $zero
+		add $a1, $zero, $zero
+		add $a2, $zero, $zero
+		add $t8, $zero, $zero
+		add $t9, $zero, $zero
+		add $t0, $zero, $zero
+		add $t1, $zero, $zero
+		add $t2, $zero, $zero
+		add $t3, $zero, $zero
+		
 		jr $ra
 
 intercambio:	#Funcion que intercambia elementos del los arreglos, a0 Indice 1 y a1 indice 2.
