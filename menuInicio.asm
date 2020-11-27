@@ -592,7 +592,7 @@ enterMatch:
 			add $t2, $zero, $zero
 			add $t3, $zero, $zero
 			jal bubbleSort
-			j menu
+			j Save
 			
 winner:	# $a0 -> indice, $a1 -> goles a favor, $a2 -> goles en contra
 		la $t9, matrix
