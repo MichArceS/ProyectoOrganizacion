@@ -47,7 +47,7 @@ main:
 	fileReading:
 		#Opening a file
 		li $v0, 13
-		la $a0, file1
+		la $a0, file3
 		li $a1, 0
 		syscall
 		move $s0, $v0
@@ -137,7 +137,7 @@ main:
 		
 		#Opening a file
 		li $v0, 13
-		la $a0, file2
+		la $a0, file4
 		li $a1, 1
 		syscall
 		move $s0, $v0	
@@ -208,8 +208,7 @@ readFile:
 		j encab
 	gSalto:	
 		li $t9, 1
-		lb $t0, 0($s1)
-		sb $t0, 0($t7)
+		addi $s1, $s1, -1
 		j continue
 		
 	com:	li $t1, 1			#Cuando encuentra la primera coma e flag pasa a 1.
