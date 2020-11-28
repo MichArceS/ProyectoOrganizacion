@@ -2,6 +2,7 @@
 .data 
 
 buffer:     .space 1024
+buffer2:    .space 1024
 savebuffer: .space 1024
 matrix:	    .space 512
 teams:	    .space 512
@@ -11,7 +12,7 @@ temp2:	    .space 32
 string:     .space 4
 numChars:   .word 6
 
-text1:      .asciiz "Bienvenido!\n"
+text1:      .asciiz "\nBienvenido!\n"
 text2:      .asciiz "Selecciona una opcion: \n"
 text3:	    .asciiz "1) Tabla de posiciones\n"
 text4:      .asciiz "2) Ingresar partido\n"
@@ -19,11 +20,11 @@ text5:      .asciiz "3) Mostrar Top 3\n"
 text6:	    .asciiz "4) Salir\n"
 text7: 	    .asciiz "Ingrese: \n"
 textErr:    .asciiz "El equipo no existe\n"
-file3:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
-file4:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
+file1:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\TablaIni.txt"
+file2:      .asciiz "C:\\Users\\User\\Desktop\\Trabajos Espol\\Quinto Semestre\\Organización de Computadores\\Proyecto\\ProyectoOrganizacion\\ingreso.txt"
 
-file1:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
-file2:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
+file3:	    .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\TablaIni.txt"
+file4:      .asciiz "D:\\Universidad\\5 Semestre\\Organizacion de Computadores\\Proyecto 1P\\ProyectoOrganizacion\\ingreso.txt"
 
 
 
@@ -64,7 +65,6 @@ main:
 
 		#Processing File
 		jal readFile
-		
 		jal bubbleSort
 		
 	#Menu
@@ -124,7 +124,7 @@ main:
 		li $v0, 4
 		la $a0, text5
 		syscall
-		j bubbleSort
+		j SaveTop3
 	case4:
 		li $v0, 4
 		la $a0, text6
@@ -156,7 +156,7 @@ main:
 		la $a0, savebuffer
 		syscall
 		
-		j main
+		j menu
 	
 	ordenar:
 		li $a0, 0
@@ -945,3 +945,108 @@ bubbleSort:  #Funcion que ordena la matriz
 		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 		jr $ra
+
+saveTop3:
+		addi $sp, $sp, -16
+		sw $ra, 0($sp)
+		sw $t0, 4($sp)
+		sw $t1, 8($sp)
+		sw $t3, 12($sp)
+		
+		la $s1, matrix
+		la $s2, teams
+		li $t8, 0 
+		la $t0, ($s1)
+		la $t1, buffer2
+		lb $s3, coma
+		lb $s4, salto
+		li $t6, 0
+		li $s7, 0
+		j timTop3
+		
+	tim1Top3:
+		li $t6, 0				#contador
+		sb $s4, ($t1)
+		addi $t1, $t1, 1
+		
+	timTop3:
+		lb $t5, ($s2)
+		beq $t5, $s3, commaTop3
+		beq $t5, $zero, readReturnTop3
+		sb  $t5, ($t1)
+		addi $t1, $t1, 1
+		addi $s2, $s2, 1
+		j timTop3
+	
+	commaTop3:	
+		sb $s3, ($t1)
+		addi $t1, $t1, 1
+		addi $t6, $t6, 1
+		addi $t8, $t8, 32
+		la $s2, teams
+		add $s2, $s2, $t8
+		
+	byteTop3:
+		
+		beq $t6, 9, tim1Top3
+		lw $a0, ($t0)
+		jal IntToString				
+		
+	guardarAsciiTop3:
+		addi $t3, $t0, -516
+		beq $t3, $s1, readReturnTop3		#Identifica si termino de recorrer la matriz
+		beq $v1, 0, contTop3			#Si ya no hay caracteres por reccorrer
+		lb $t2, ($v0)				#cargo el byte
+		sb  $t2, ($t1)				#Guarda los caracteres ascii de la string
+		addi $t1, $t1, 1			#Aumenta el buffer
+		addi $v0, $v0, 1
+		addi $v1, $v1, -1			#resta el caracter
+		j guardarAsciiTop3
+	
+	contTop3:
+		
+		sb $s3, ($t1)
+		addi $t1, $t1, 1
+		addi $t0, $t0, 4
+		addi $t6, $t6, 1
+		addi $s7, $s7, 1
+		beq $s7, 24, readReturnTop3
+		j byteTop3
+	
+	readReturnTop3:
+		lw $ra, 0($sp)
+		lw $t0, 4($sp)
+		lw $t1, 8($sp)
+		lw $t3, 12($sp)
+		addi $sp, $sp, 16
+		
+		jr $ra
+		
+SaveTop3:	
+		jal bubbleSort
+		
+		jal saveTop3
+		
+		#Opening a file
+		li $v0, 13
+		la $a0, file2
+		li $a1, 1
+		syscall
+		move $s0, $v0	
+		
+		li $v0, 15
+		move $a0, $s0
+		la $a1, buffer2
+		li $a2, 512
+		syscall
+		
+		#Closing the file
+		li $v0, 16
+		move $a0, $s0
+		syscall
+		
+		li $v0, 4
+		la $a0, buffer2
+		syscall
+		
+		j menu
