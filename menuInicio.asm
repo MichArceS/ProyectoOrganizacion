@@ -5,6 +5,7 @@ buffer:     .space 1024
 savebuffer: .space 1024
 matrix:	    .space 512
 teams:	    .space 512
+encabezado: .space 1024
 team:       .space 32
 temp:       .space 32
 temp2:	    .space 32
@@ -179,6 +180,8 @@ readFile:
 		li $t8, 0			#Index of teams
 		la $s6, matrix			#Matrix
 		li $t1, 0 			# Linea Flag - Indica si ya se encontro la primera coma.
+		la $t7, encabezado		#encabezado buffer
+		li $t9, 0			# Encabezado flag
 		lb $s3, coma			
 		lb $s5, salto		
 		li $s7, 0
@@ -188,6 +191,7 @@ readFile:
 	Loop:	lb $t0, 0($s1)			#carga el caracter
 
 		beq $t0, $zero, rfend 		#Se verifica que se acabo el string
+		beq $t9, $zero, encab	 	#si es la primera linea se guarda el encabezado
 		beq $t1, 1, points 		#Si ya hubo una coma, pasa a guardar los puntos
 		beq $t0, $s3, com		#Se verifica si es una coma
 		
@@ -195,6 +199,18 @@ readFile:
 		addi $s2,$s2, 1			#Se aumenta el indice del array de equipos
 		j continue
 		
+	encab: 	
+		beq $t0, $s5, gSalto		#al primer salto de linea cambia.
+		lb $t0, 0($s1)
+		sb $t0, 0($t7)
+		addi $s1,$s1, 1
+		addi $t7, $t7, 1
+		j encab
+	gSalto:	
+		li $t9, 1
+		lb $t0, 0($s1)
+		sb $t0, 0($t7)
+		j continue
 		
 	com:	li $t1, 1			#Cuando encuentra la primera coma e flag pasa a 1.
 	
@@ -234,7 +250,7 @@ readFile:
 		addi $s7, $s7, 1
 		j continue
 
-		
+			
      continue:  
      		beq $t0, $zero, rfend			
 		addi $s1,$s1,1			#Se aumenta el indice del buffer
@@ -253,6 +269,7 @@ saveFile:
 		sw $t1, 8($sp)
 		sw $t3, 12($sp)
 		
+		
 		la $s1, matrix
 		la $s2, teams
 		li $t8, 0 
@@ -261,10 +278,21 @@ saveFile:
 		lb $s3, coma
 		lb $s4, salto
 		li $t6, 0
-		j tim
+		
+		la $t7, encabezado
+	aggEncabezado:
+		lb $t2, ($t7)
+		beq $t2, $s4, tim1
+		sb $t2, ($t1)
+		addi $t7, $t7, 1
+		addi $t1, $t1, 1
+		j aggEncabezado
+		
 		
 	tim1:
 		li $t6, 0				#contador
+		addi $t3, $t0, -512			
+		beq $t3, $s1, readReturn
 		sb $s4, ($t1)
 		addi $t1, $t1, 1
 	tim:
@@ -309,6 +337,8 @@ saveFile:
 		j byte
 	
 	readReturn:
+		sb $s4, ($t1)
+		addi $t1, $t1, 1
 		lw $ra, 0($sp)
 		lw $t0, 4($sp)
 		lw $t1, 8($sp)
